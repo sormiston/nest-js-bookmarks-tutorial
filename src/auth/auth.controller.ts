@@ -1,9 +1,17 @@
-import { Body, Controller, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
+  /** DEPENDENCY INJECTION - with private accessor
+   * shorthand equivalent to:
+   *
+   * authService: AuthService;
+   * constructor(authService: AuthService) {
+   *   this.authService = authservice;
+   * }
+   */
   constructor(private authService: AuthService) {}
 
   @Post('signup')
