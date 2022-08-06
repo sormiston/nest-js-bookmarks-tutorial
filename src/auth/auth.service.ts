@@ -1,9 +1,5 @@
-import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
@@ -18,6 +14,10 @@ export class AuthService {
     PASSWORDS_DO_NOT_MATCH: Object.freeze({
       type: 'WrongPasswordException',
       message: 'Provided password invalid.',
+    }),
+    CREDENTIALS_TAKEN: Object.freeze({
+      type: 'CredentialsTaken',
+      message: 'Credentials taken.',
     }),
   };
 
@@ -44,7 +44,7 @@ export class AuthService {
       return user;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ForbiddenException('Credentials taken');
+        throw new ForbiddenException(this.ERRORS.CREDENTIALS_TAKEN);
       }
     }
   }
@@ -75,7 +75,9 @@ export class AuthService {
       delete user.hash;
       return user;
     } catch (error) {
-      throw new ForbiddenException(error);
+      if (Object.values(this.ERRORS).includes(error)) {
+        throw new ForbiddenException(error);
+      }
     }
   }
 }
