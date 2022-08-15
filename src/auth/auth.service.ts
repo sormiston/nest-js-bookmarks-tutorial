@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
-import * as argon from 'argon2';
+import * as md5 from 'md5';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class AuthService {
   async signup(dto: AuthDto) {
     try {
       // generate password hash
-      const hash = await argon.hash(dto.password);
+      const hash = md5(dto.password);
       // save the new user in the db
       const user = await this.prisma.user.create({
         data: {
@@ -64,7 +64,7 @@ export class AuthService {
       }
 
       // compare password
-      const pwValid = await argon.verify(user.hash, dto.password);
+      const pwValid = user.hash === md5(dto.password);
 
       // if password incorrect, throw exception
       if (!pwValid) {
