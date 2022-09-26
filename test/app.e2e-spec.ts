@@ -3,6 +3,9 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+import * as pactum from 'pactum';
+import { AuthDto } from 'src/auth/dto';
+
 describe('App e2e', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -19,10 +22,13 @@ describe('App e2e', () => {
       }),
     );
     await app.init();
+    await app.listen(3333);
 
     prisma = app.get(PrismaService);
 
     await prisma.cleanDb();
+
+    pactum.request.setBaseUrl('http://localhost:3333');
   });
 
   afterAll(() => {
@@ -30,10 +36,79 @@ describe('App e2e', () => {
   });
 
   describe('Auth', () => {
+    const dto: AuthDto = {
+      email: 'coolbeans@hackers.com',
+      password: 'strongpassword123',
+    };
     describe('Signup', () => {
-      it.todo('should signup');
+      it('should throw if email empty', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signup')
+          .withBody({
+            password: dto.password,
+          })
+          .expectStatus(400);
+      });
+      it('should throw if password empty', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signup')
+          .withBody({
+            email: dto.email,
+          })
+          .expectStatus(400);
+      });
+      it('should throw if no body provided', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signup')
+          .withBody({})
+          .expectStatus(400);
+      });
+      it('should signup', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signup')
+          .withBody(dto)
+          .expectStatus(201);
+      });
     });
-    describe('Signin', () => {});
+
+    describe('Signin', () => {
+      it('should throw if email empty', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signin')
+          .withBody({
+            password: dto.password,
+          })
+          .expectStatus(400);
+      });
+      it('should throw if password empty', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signin')
+          .withBody({
+            email: dto.email,
+          })
+          .expectStatus(400);
+      });
+      it('should throw if no body provided', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signin')
+          .withBody({})
+          .expectStatus(400);
+      });
+      it('should signin', async () => {
+        return await pactum
+          .spec()
+          .post('/auth/signin')
+          .withBody(dto)
+          .expectStatus(200);
+      });
+    });
   });
 
   describe('User', () => {
