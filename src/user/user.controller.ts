@@ -7,8 +7,7 @@ import { User } from '@prisma/client';
 @UseGuards(JwtGuard)
 export class UserController {
   @Get('me')
-  getMe(@GetUser() user: User, @GetUser('email') email: string) {
-    console.log('email', email);
+  getMe(@GetUser() user: User) {
     return user;
   }
 }
