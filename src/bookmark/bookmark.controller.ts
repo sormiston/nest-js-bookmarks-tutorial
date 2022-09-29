@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
@@ -23,8 +24,10 @@ export class BookmarkController {
     return this.bookmarkService.getAllBookmarks(userId);
   }
 
-  @Get(':id')
-  getBookmarkById(@Param('id') id: string) {}
+  @Get('/:id')
+  getBookmarkById(@Param('id', ParseIntPipe) id: number) {
+    return this.bookmarkService.getBookmarkById(id);
+  }
 
   @Post('create')
   createBookmark(
