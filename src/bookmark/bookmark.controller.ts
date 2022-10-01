@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -18,13 +20,12 @@ import { CreateBookmarkDto, EditBookmarkDto } from './dto';
 @UseGuards(JwtGuard)
 export class BookmarkController {
   constructor(private bookmarkService: BookmarkService) {}
-
   @Get()
   listBookmarks(@GetUser('id') userId: number) {
     return this.bookmarkService.getAllBookmarks(userId);
   }
 
-  @Get('/:id')
+  @Get(':id')
   getBookmarkById(@Param('id', ParseIntPipe) id: number) {
     return this.bookmarkService.getBookmarkById(id);
   }
@@ -34,11 +35,17 @@ export class BookmarkController {
     @GetUser('id') userId: number,
     @Body() dto: CreateBookmarkDto,
   ) {
-    this.bookmarkService.createBookmark(userId, dto);
+    return this.bookmarkService.createBookmark(userId, dto);
   }
 
-  @Patch(':id')
-  editBookmark(@Body() dto: EditBookmarkDto) {}
+  @Patch(':bookmarkId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  editBookmark(
+    @Param('bookmarkId', ParseIntPipe) bookmarkId: number,
+    @Body() patchData: EditBookmarkDto,
+  ) {
+    return this.bookmarkService.editBookmark(bookmarkId, patchData);
+  }
 
   @Delete(':id')
   deleteBookmark(@Param('id') id: string) {}
