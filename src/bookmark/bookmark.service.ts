@@ -73,6 +73,7 @@ export class BookmarkService {
     return bookmarkUpdate;
   }
 
+  // TODO: guard this from cross user contamination!!
   async deleteBookmark(bookmarkId: number) {
     return await this.prisma.bookmark.delete({
       where: {
