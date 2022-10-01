@@ -4,6 +4,7 @@ import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import * as pactum from 'pactum';
+import { includes } from 'pactum-matchers';
 import { AuthDto } from 'src/auth/dto';
 import { CreateBookmarkDto } from 'src/bookmark/dto';
 
@@ -141,19 +142,19 @@ describe('App e2e', () => {
     });
   });
 
+  const dto1: CreateBookmarkDto = {
+    title: 'my cool bookmark',
+    description: 'it is so cool I had to bookmark it',
+    link: 'http://www.foo.bar',
+  };
+  const dto2: CreateBookmarkDto = {
+    title: 'my cooler bookmark',
+    description: 'this one is even cooler',
+    link: 'http://www.bar.baz',
+  };
+
   describe('Bookmark', () => {
     describe('Create bookmark', () => {
-      const dto1: CreateBookmarkDto = {
-        title: 'my cool bookmark',
-        description: 'it is so cool I had to bookmark it',
-        link: 'http://www.foo.bar',
-      };
-      const dto2: CreateBookmarkDto = {
-        title: 'my cooler bookmark',
-        description: 'this one is even cooler',
-        link: 'http://www.bar.baz',
-      };
-
       it('should create a first bookmark', () => {
         return pactum
           .spec()
@@ -180,12 +181,60 @@ describe('App e2e', () => {
           .get('/bookmarks')
           .withHeaders({ authorization: 'Bearer $S{userAt}' })
           .expectStatus(200)
-          .expectJsonLength(2);
+          .expectJsonLength(2)
+          .stores('firstId', '[0].id');
       });
     });
 
-    describe('Get bookmark by id', () => {});
-    describe('Edit bookmark', () => {});
+    describe('Get bookmark by id', () => {
+      it('should get a bookmark by id', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks/$S{firstId}')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .expectStatus(200)
+          .expectBodyContains(dto1.description)
+          .expectBodyContains(dto1.title)
+          .expectBodyContains(dto1.link);
+      });
+    });
+    describe('Edits bookmark', () => {
+      it('should edit the first test bookmark with a patch request', () => {
+        return pactum
+          .spec()
+          .patch('/bookmarks/$S{firstId}')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withBody({
+            description: "I'm so happy I bookmarked this!  Amazing!",
+          })
+          .expectStatus(204);
+      });
+      it('first bookmark should now be modified', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks/$S{firstId}')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .expectStatus(200)
+          .expectBodyContains(dto1.title)
+          .expectBodyContains(dto1.link)
+          .expectJsonLike({
+            description: "I'm so happy I bookmarked this!  Amazing!",
+          });
+      });
+      it('throws an error if a patch field is invalid', () => {
+        return pactum
+          .spec()
+          .patch('/bookmarks/$S{firstId')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withBody({
+            link: 'this is totally not a link',
+          })
+          .expectStatus(400)
+          .expectJsonMatch({
+            message: includes('link must be an URL address'),
+          });
+      });
+    });
     describe('Delete bookmark', () => {});
   });
 });
