@@ -47,6 +47,11 @@ export class BookmarkController {
     return this.bookmarkService.editBookmark(bookmarkId, patchData);
   }
 
-  @Delete(':id')
-  deleteBookmark(@Param('id') id: string) {}
+  @Delete(':bookmarkId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteBookmark(
+    @Param('bookmarkId', ParseIntPipe) bookmarkId: number,
+  ) {
+    return this.bookmarkService.deleteBookmark(bookmarkId);
+  }
 }

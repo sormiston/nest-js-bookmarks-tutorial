@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBookmarkDto, EditBookmarkDto } from './dto';
 
 @Injectable()
 export class BookmarkService {
+  ERRORS = {
+    BOOKMARK_DOES_NOT_EXIST: Object.freeze({
+      type: 'BookmarkDoesNotExist',
+      message: 'Bookmark does not exist.',
+    }),
+  };
   constructor(private prisma: PrismaService) {}
 
   async getAllBookmarks(userId: number) {
@@ -21,7 +27,11 @@ export class BookmarkService {
         id,
       },
     });
-    return bookmark;
+    if (bookmark === null) {
+      throw new NotFoundException(this.ERRORS.BOOKMARK_DOES_NOT_EXIST);
+    } else {
+      return bookmark;
+    }
   }
 
   async createBookmark(userId: number, dto: CreateBookmarkDto) {
@@ -38,6 +48,14 @@ export class BookmarkService {
         id: bookmarkId,
       },
       data: patchData,
+    });
+  }
+
+  async deleteBookmark(bookmarkId: number) {
+    return await this.prisma.bookmark.delete({
+      where: {
+        id: bookmarkId,
+      },
     });
   }
 }

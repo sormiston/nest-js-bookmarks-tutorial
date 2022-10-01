@@ -224,7 +224,7 @@ describe('App e2e', () => {
       it('throws an error if a patch field is invalid', () => {
         return pactum
           .spec()
-          .patch('/bookmarks/$S{firstId')
+          .patch('/bookmarks/$S{firstId}')
           .withHeaders({ authorization: 'Bearer $S{userAt}' })
           .withBody({
             link: 'this is totally not a link',
@@ -235,6 +235,21 @@ describe('App e2e', () => {
           });
       });
     });
-    describe('Delete bookmark', () => {});
+    describe('Delete bookmark', () => {
+      it('deletes a bookmark', () => {
+        return pactum
+          .spec()
+          .delete('/bookmarks/$S{firstId}')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .expectStatus(204);
+      });
+      it('deleted bookmark no longer exists, returns 404 not found', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks/$S{firstId}')
+          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .expectStatus(404);
+      });
+    });
   });
 });
