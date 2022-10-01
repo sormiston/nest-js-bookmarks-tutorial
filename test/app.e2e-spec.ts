@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  HttpStatus,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -37,18 +41,24 @@ describe('App e2e', () => {
     app.close();
   });
 
+  const user1: AuthDto = {
+    email: 'coolbeans@hackers.com',
+    password: 'strongpassword123',
+  };
+
+  const user2: AuthDto = {
+    email: 'coolfavas@hackers.com',
+    password: 'ultimatepassword456',
+  };
+
   describe('Auth', () => {
-    const dto: AuthDto = {
-      email: 'coolbeans@hackers.com',
-      password: 'strongpassword123',
-    };
     describe('Signup', () => {
       it('should throw if email empty', () => {
         return pactum
           .spec()
           .post('/auth/signup')
           .withBody({
-            password: dto.password,
+            password: user1.password,
           })
           .expectStatus(400);
       });
@@ -57,7 +67,7 @@ describe('App e2e', () => {
           .spec()
           .post('/auth/signup')
           .withBody({
-            email: dto.email,
+            email: user1.email,
           })
           .expectStatus(400);
       });
@@ -68,11 +78,18 @@ describe('App e2e', () => {
           .withBody({})
           .expectStatus(400);
       });
-      it('should signup', () => {
+      it('can signup a first user', () => {
         return pactum
           .spec()
           .post('/auth/signup')
-          .withBody(dto)
+          .withBody(user1)
+          .expectStatus(201);
+      });
+      it('can signup a second user', () => {
+        return pactum
+          .spec()
+          .post('/auth/signup')
+          .withBody(user2)
           .expectStatus(201);
       });
     });
@@ -83,7 +100,7 @@ describe('App e2e', () => {
           .spec()
           .post('/auth/signin')
           .withBody({
-            password: dto.password,
+            password: user1.password,
           })
           .expectStatus(400);
       });
@@ -92,7 +109,7 @@ describe('App e2e', () => {
           .spec()
           .post('/auth/signin')
           .withBody({
-            email: dto.email,
+            email: user1.email,
           })
           .expectStatus(400);
       });
@@ -103,13 +120,21 @@ describe('App e2e', () => {
           .withBody({})
           .expectStatus(400);
       });
-      it('should signin', () => {
+      it('can signin the first user', () => {
         return pactum
           .spec()
           .post('/auth/signin')
-          .withBody(dto)
+          .withBody(user1)
           .expectStatus(200)
-          .stores('userAt', 'access_token');
+          .stores('firstUser', 'access_token');
+      });
+      it('can signin the second user', () => {
+        return pactum
+          .spec()
+          .post('/auth/signin')
+          .withBody(user2)
+          .expectStatus(200)
+          .stores('secondUser', 'access_token');
       });
     });
   });
@@ -120,7 +145,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get('/users/me')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(200);
       });
     });
@@ -133,7 +158,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .patch('/users')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .withBody(editUserDto)
           .expectStatus(200)
           .expectBodyContains(editUserDto.firstName)
@@ -159,8 +184,9 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/bookmarks/create')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .withBody(dto1)
+          .stores('firstBookmarkId', 'id')
           .expectStatus(201);
       });
 
@@ -168,7 +194,7 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .post('/bookmarks/create')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .withBody(dto2)
           .expectStatus(201);
       });
@@ -179,10 +205,9 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get('/bookmarks')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(200)
-          .expectJsonLength(2)
-          .stores('firstId', '[0].id');
+          .expectJsonLength(2);
       });
     });
 
@@ -190,8 +215,9 @@ describe('App e2e', () => {
       it('should get a bookmark by id', () => {
         return pactum
           .spec()
-          .get('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .get('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(200)
           .expectBodyContains(dto1.description)
           .expectBodyContains(dto1.title)
@@ -202,8 +228,9 @@ describe('App e2e', () => {
       it('should edit the first test bookmark with a patch request', () => {
         return pactum
           .spec()
-          .patch('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .patch('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .withBody({
             description: "I'm so happy I bookmarked this!  Amazing!",
           })
@@ -212,8 +239,9 @@ describe('App e2e', () => {
       it('first bookmark should now be modified', () => {
         return pactum
           .spec()
-          .get('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .get('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(200)
           .expectBodyContains(dto1.title)
           .expectBodyContains(dto1.link)
@@ -224,8 +252,9 @@ describe('App e2e', () => {
       it('throws an error if a patch field is invalid', () => {
         return pactum
           .spec()
-          .patch('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .patch('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .withBody({
             link: 'this is totally not a link',
           })
@@ -234,20 +263,34 @@ describe('App e2e', () => {
             message: includes('link must be an URL address'),
           });
       });
+      it("throws an error if attempting to modify another user's bookmark", () => {
+        return pactum
+          .spec()
+          .patch('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{secondUser}' })
+          .withBody({
+            description:
+              "Wait, I shouldn't be editing this person's bookmark!",
+          })
+          .expectStatus(HttpStatus.FORBIDDEN);
+      });
     });
     describe('Delete bookmark', () => {
       it('deletes a bookmark', () => {
         return pactum
           .spec()
-          .delete('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .delete('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(204);
       });
       it('deleted bookmark no longer exists, returns 404 not found', () => {
         return pactum
           .spec()
-          .get('/bookmarks/$S{firstId}')
-          .withHeaders({ authorization: 'Bearer $S{userAt}' })
+          .get('/bookmarks/{id}')
+          .withPathParams('id', '$S{firstBookmarkId}')
+          .withHeaders({ authorization: 'Bearer $S{firstUser}' })
           .expectStatus(404);
       });
     });

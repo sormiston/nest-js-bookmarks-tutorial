@@ -41,10 +41,15 @@ export class BookmarkController {
   @Patch(':bookmarkId')
   @HttpCode(HttpStatus.NO_CONTENT)
   editBookmark(
+    @GetUser('id') userId: number,
     @Param('bookmarkId', ParseIntPipe) bookmarkId: number,
     @Body() patchData: EditBookmarkDto,
   ) {
-    return this.bookmarkService.editBookmark(bookmarkId, patchData);
+    return this.bookmarkService.editBookmark(
+      userId,
+      bookmarkId,
+      patchData,
+    );
   }
 
   @Delete(':bookmarkId')
