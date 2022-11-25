@@ -52,6 +52,8 @@ export class AuthService {
       if (error instanceof PrismaClientKnownRequestError) {
         throw new ForbiddenException(PrismaClientKnownRequestError);
         // throw new ForbiddenException(this.ERRORS.CREDENTIALS_TAKEN);
+      } else {
+        console.error(error.message);
       }
     }
   }
