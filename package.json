@@ -10,12 +10,10 @@
     "db:dev:up": "docker compose up -d dev-db",
     "prisma:dev:deploy": "prisma migrate deploy",
     "db:dev:restart": "npm run db:dev:rm; npm run db:dev:up && sleep 1 && npm run prisma:dev:deploy",
-    
     "db:test:rm": "docker compose rm -s -f -v test-db",
     "db:test:up": "docker compose up -d test-db",
     "prisma:test:deploy": "dotenv -e .env.test -- prisma migrate deploy",
     "db:test:restart": "npm run db:test:rm; npm run db:test:up && sleep 1 && npm run prisma:test:deploy",
-
     "prebuild": "rimraf dist",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -74,7 +72,8 @@
     "ts-loader": "^9.2.3",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "4.0.0",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "webpack": "^5.75.0"
   },
   "jest": {
     "moduleFileExtensions": [

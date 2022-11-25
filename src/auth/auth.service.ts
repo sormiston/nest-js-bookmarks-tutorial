@@ -50,7 +50,8 @@ export class AuthService {
       return user;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ForbiddenException(this.ERRORS.CREDENTIALS_TAKEN);
+        throw new ForbiddenException(PrismaClientKnownRequestError);
+        // throw new ForbiddenException(this.ERRORS.CREDENTIALS_TAKEN);
       }
     }
   }

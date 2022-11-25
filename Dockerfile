@@ -1,5 +1,5 @@
 # Initiate a container to build the application in.
-FROM node:14-alpine as builder
+FROM node:14 as builder
 ENV NODE_ENV=build
 WORKDIR /usr/src/app
 
@@ -7,10 +7,13 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install the dependencies required to build the application.
-RUN npm install
+RUN npm ci
 
 # Copy the application source into the container.
 COPY . .
+
+# Prisma - generate client
+RUN npx prisma generate
 
 # Build the application.
 RUN npm run build
