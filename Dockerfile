@@ -18,18 +18,21 @@ RUN npx prisma generate
 # Build the application.
 RUN npm run build
 
-# Uninstall the dependencies not required to run the built application.
-RUN npm prune --production
-
 # Initiate a new container to run the application in.
 FROM node:14-alpine
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
+# Prisma migrate
+RUN npx prisma migrate deploy
+
 # Copy everything required to run the built application into the new container.
 COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/node_modules/ ./node_modules/
 COPY --from=builder /usr/src/app/dist/ ./dist/
+
+# Uninstall the dependencies not required to run the built application.
+RUN npm prune --production
 
 # Expose the web server's port.
 EXPOSE 3000
